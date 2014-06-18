@@ -11,17 +11,41 @@
 # Author: Jody Foo <jody.foo@gmail.com>
 # Date: 2014-05-22
 
-EXPECTED_ARGS=1
-E_BADARGS=65
+# default values
+date=$(date +%Y-%m-%d)
+clear=""
 
-if [ $# -ne $EXPECTED_ARGS ]
-then
-    echo -e "Usage: `basename $0` <path to screenlog dir>\nCreates a movie of the screencaptures in _todays_ log dir."
-    exit $E_BADARGS
-fi
+# extract options to variables
+while getopts ":d:c" options; do
+    case "${options}" in
+        d)
+            date=$2
+            ;;
+        c)
+            clear=1
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND-1));
+
+echo "Date set to" $date
+echo ARGS: $1
+
+### TODO ###
+# * Check number of args
 
 # add path to ffmpeg
 PATH=${PATH}:/usr/local/bin
+
+function usage() {
+    echo -e "Usage: `basename $0` <path to screenlog dir> [-d YY-MM-DD] [-c]"
+    echo -e "Creates a movie of the screencaptures in _todays_ log dir unless"
+    echo -e "the -d <YY-MM-DD> option is used."
+    echo -e "Using the -c flag deletes the jpgs after the movie has been created."
+}
 
 function log() {
     message="`date +%Y-%m-%d\ %H:%M:%S`: $1"
@@ -29,15 +53,23 @@ function log() {
     echo $message >> ~/Library/Logs/se.fnurl.createScreenlogMovie.log
 }
 
-date=$(date +%Y-%m-%d)
 logpath=${1%/}/$date
 mkdir -p $logpath
+
+echo LOGPATH: $logpath
+#exit 0
 
 # check for ffmpeg
 if hash ffmpeg 2>/dev/null; then
     log "ffmpeg found, creating movie..."
     ffmpeg -r 15 -pattern_type glob -i "$logpath/*.jpg" -vcodec libx264 $logpath/$date.mp4
     log "screenlog movie $logpath/$date.mp4 created."
+    if [ -n "$clear" ]; then
+        echo "Deleting source jpgs..."
+        rm $logpath/*.jpg
+    else
+        echo "Keeping source jpgs..."
+    fi
 else
     log "ffmpeg not found"
     exit 1
