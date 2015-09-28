@@ -77,7 +77,7 @@ if hash ffmpeg 2>/dev/null; then
     if [ $? -eq 0 ]; then
         log "screenlog movie $logpath/$date.mp4 created."
         if [ -n "$remove" ]; then
-            echo "Deleting source jpgs..."
+            echo "Deleting source jpgs ($logpath/*.jpg)..."
             rm $logpath/*.jpg
         else
             echo "Keeping source jpgs..."
