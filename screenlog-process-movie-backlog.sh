@@ -18,6 +18,6 @@ do
     #echo "Checking if $dir_noslash/$dir_name.mp4 exists.."
     if [ ! -f $dir_noslash/$dir_name.mp4 ]; then
         echo "Movie missing for $dir_name, creating..."
-        #create-screenlog-movie.sh -d $dir_name -r /Users/jodfo01/screenlog        
+        create-screenlog-movie.sh -d $dir_name -r /Users/jodfo01/screenlog        
     fi
 done

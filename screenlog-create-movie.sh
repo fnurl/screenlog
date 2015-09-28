@@ -84,6 +84,7 @@ if hash ffmpeg 2>/dev/null; then
         fi
     else
         log "ERROR: Failed to create movie. Not deleting any source jpgs."
+    fi
 else
     log "ERROR: ffmpeg not found"
     exit 1
