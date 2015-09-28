@@ -72,14 +72,19 @@ echo LOGPATH: $logpath
 if hash ffmpeg 2>/dev/null; then
     log "ffmpeg found, creating movie..."
     ffmpeg -r 15 -pattern_type glob -i "$logpath/*.jpg" -vcodec libx264 $logpath/$date.mp4
-    log "screenlog movie $logpath/$date.mp4 created."
-    if [ -n "$remove" ]; then
-        echo "Deleting source jpgs..."
-        rm $logpath/*.jpg
+    
+    # if movie created
+    if [ $? -eq 0 ]; then
+        log "screenlog movie $logpath/$date.mp4 created."
+        if [ -n "$remove" ]; then
+            echo "Deleting source jpgs..."
+            rm $logpath/*.jpg
+        else
+            echo "Keeping source jpgs..."
+        fi
     else
-        echo "Keeping source jpgs..."
-    fi
+        log "ERROR: Failed to create movie. Not deleting any source jpgs."
 else
-    log "ffmpeg not found"
+    log "ERROR: ffmpeg not found"
     exit 1
 fi
