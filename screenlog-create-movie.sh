@@ -19,7 +19,7 @@ PATH=${PATH}:/usr/local/bin
 
 function usage() {
     echo "Usage: `basename $0` [-d YYYY-MM-DD] [-r] <path to screenlog dir>"
-    echo "Create a movie of the screencaptures in _todays_ log dir unless the -d is used."
+    echo "Create a movie of the screencaptures in _yesterday's_ log dir unless the -d is used."
     echo ""
     echo "    -d <YYYY-MM-DD>  create movie for a specific date"
     echo "    -r deletes the jpgs after the movie has been created"
@@ -28,11 +28,11 @@ function usage() {
 function log() {
     message="`date +%Y-%m-%d\ %H:%M:%S`: $1"
     echo $message
-    echo $message >> ~/Library/Logs/se.fnurl.createScreenlogMovie.log
+    echo $message >> ~/Library/Logs/se.fnurl.screenlog.createMovie.log
 }
 
 # default values
-date=$(date +%Y-%m-%d)
+date=$(gdate -d "yesterday 13:00" "+%Y-%m-%d")
 remove=""
 
 # extract options to variables
@@ -60,7 +60,7 @@ then
   exit $E_BADARGS
 fi
 
-echo "Date set to" $date
+echo "Processing screenlog for" $date"..."
 #echo ARGS: $1
 
 # Remove trailing / from path if it exists and append date to logpath
