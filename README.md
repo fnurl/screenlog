@@ -9,9 +9,10 @@ I use screenlog to take screenshots of my display at regular intervals during th
 * ImageMagick (for convert)
 * ghostscript (dependency for convert using fonts)
 * ffmpeg
-* gnu date command, `gdate` (for a more reliable way to get yesterday's date)
+* gnu `date` command, `gdate` (for a more reliable way to get yesterday's date)
+* `dspsizes` command which returns the number of attached displays and their sizes.
 
-All requirements can be installed via [Homebrew](http://brew.sh/):
+All requirements except dspsizes can be installed via [Homebrew](http://brew.sh/):
 
     % brew install ghostscript imagemagick ffmpeg coreutils
 
@@ -26,3 +27,12 @@ Set up the paths to `convert` and `ffmpeg` in the scripts.
 I use screenlog by setting up launchd to run `screenlog-capture.sh` every 60 seconds. I use [Lingon X](http://www.peterborgapps.com/lingon/) to set up the launch agent. You need to pass the path to your `screenlog` directory as an argument.
 
 I then have `create-screenlog-movie.sh` run at 23:00 every day, also using [Lingon X](http://www.peterborgapps.com/lingon/) to set up the launch agent. Pass the path to your `screenlog` directory as an argument.
+
+# TODO
+
+Use either
+
+- `system_profiler SPDisplaysDataType` or
+- `defaults read /Library/Preferences/com.apple.windowserver.plist`
+
+to get number of displays instead of using `dspsizes`.

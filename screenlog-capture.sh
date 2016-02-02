@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh -f
 
 # This script is part of screenlog <http://>
 #
@@ -22,15 +22,13 @@ PATH=${PATH}:/usr/local/bin
 
 date=$(date +%Y-%m-%d)
 logpath=${1%/}/$date
-mkdir -p $logpath
+mkdir -p ${logpath}
 
 datetime=$(date +%Y%m%d\_%H%M%S)
 prettydatetime=$(date +%Y-%m-%d\ %H:%M:%S)
 
-
-# TODO: if dspsizes says one screen, do existing code. else add files to the list
-# of files for screencapture to save to
-# then make a big image from all screenshots and resize that
+width=1024
+height=640
 
 # The command dspsizes outputs multiple lines, so we save each line to an
 # element in the array $dspsizes using `dspsizes=($(dspsizes))`
@@ -41,53 +39,52 @@ prettydatetime=$(date +%Y-%m-%d\ %H:%M:%S)
 # ${dspsizes[2]}
 dspsizes=($(dspsizes))
 
-# Two displays
-if [ ${#dspsizes[@]} -eq 3 ]; then
-    echo "Capturing two displays.."
+# get length of array (last line is the number of displays)
+num_displays=${#dspsizes[@]}
+((num_displays-=1))
 
-    # capture
-    screencapture -x -t jpg $logpath/$datetime-large1.jpg $logpath/$datetime-large2.jpg
+# set up file names
+screencaps=()
+for i in {1..$num_displays}; do
+    screencaps+=("${logpath}/${datetime}-large${i}.jpg")
+done
 
-    echo "Resizing and adding timestamp.."
-    # resize both screenshots to same height (480), preserving aspect ratio
-    convert $logpath/$datetime-large1.jpg -resize x480\> $logpath/$datetime-h480_1.jpg
-    convert $logpath/$datetime-large2.jpg -resize x480\> $logpath/$datetime-h480_2.jpg
+echo "${datetime}: Capturing screenshots from $num_displays display(s)..."
+screencapture -x -t jpg $screencaps
 
-    # tile the two screenshots that have the same height
-    convert $logpath/$datetime-h480_1.jpg $logpath/$datetime-h480_2.jpg\
-            +append $logpath/$datetime-notext.jpg
+echo "Resizing screencaps to a maximum height of ${height}..."
+screencaps=()
+for i in {1..$num_displays}; do
+    currentfile="${logpath}/${datetime}_${height}_${i}.jpg"
+    convert ${logpath}/${datetime}-large${i}.jpg \
+            -resize x${height} \
+            ${currentfile}
+    screencaps+=($currentfile)
+done
 
-    # resize tiled image to 768x480 with pillboxing
-    mogrify -resize 768x480 -background black -gravity center -extent 768x480\
-            -format jpg -quality 75 $logpath/$datetime-notext.jpg
-    rm $logpath/$datetime-large1.jpg
-    rm $logpath/$datetime-large2.jpg
-    rm $logpath/$datetime-h480_1.jpg
-    rm $logpath/$datetime-h480_2.jpg
+echo "Creating tiled screenshot..."
+# Unfortunately, there is no way of changeing the order of the tiling
+# since the order is decided by the display numbering which always sets
+# the internal display as display 0
+convert ${screencaps} +append ${logpath}/${datetime}-notext.jpg
 
-    convert $logpath/$datetime-notext.jpg -fill white -undercolor "#00000080" \
-        -gravity South -annotate +0+5 "$prettydatetime" -font "Verdana" \
-        -pointsize 64 $logpath/$datetime.jpg
-    rm $logpath/$datetime-notext.jpg
-    echo "Saved $logpath/$datetime.jpg"
+echo "Resizing tiled screenshot and adding timestamp..."
+# resize tiled image to ${width}x${height} with pillboxing
+mogrify -resize ${width}x${height} \
+        -background black \
+        -gravity center -extent ${width}x${height} \
+        -format jpg \
+        -quality 75 ${logpath}/${datetime}-notext.jpg
+# add time stamp
+convert ${logpath}/${datetime}-notext.jpg \
+    -fill "#44444488" -draw 'rectangle 0,585,1024,635' \
+    -fill white -gravity South -font Helvetica-Bold -pointsize 32 \
+    -annotate +0+10 "${prettydatetime}" \
+    ${logpath}/${datetime}.jpg
+echo "${datetime}: Saved ${logpath}/${datetime}.jpg"
 
-# One display
-elif [ ${#dspsizes[@]} -eq 2 ]; then
-    echo "Capturing single display.."
-
-    # screenshot
-    screencapture -x -t jpg $logpath/$datetime-large.jpg
-
-    echo "Resizing and adding timestamp.."
-    # resize screenshot to a 768x480 with pillboxing if needed
-    mogrify -resize 768x480 -background black -gravity center -extent 768x480\
-            -format jpg -quality 100 $logpath/$datetime-notext.jpg
-    rm $logpath/$datetime-large.jpg
-
-    # add time stamp
-    convert $logpath/$datetime-notext.jpg -fill white -undercolor "#00000080" \
-        -gravity South -annotate +0+5 "$prettydatetime" -font "Verdana" \
-        -pointsize 64 $logpath/$datetime.jpg
-    rm $logpath/$datetime-notext.jpg
-    echo "Saved $logpath/$datetime.jpg"
-fi
+# remove tmp files
+echo "Deleting tmp files..."
+rm -f ${logpath}/${datetime}-large?.jpg
+rm -f ${logpath}/${datetime}_${height}_?.jpg
+rm -f ${logpath}/${datetime}-notext.jpg
