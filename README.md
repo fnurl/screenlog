@@ -5,6 +5,8 @@ I use screenlog to take screenshots of my display at regular intervals during th
 * `screenlog-create-movie.sh`: Creates a movie of the *screenshots taken yesterday*. The movie is saved as `/path/to/screenlog/YY-MM-DD/YYMMDD.mp4`. You have to provide the `/path/to/screenlog` when calling the script. Use the -d flag to specify a specific date to create the movie for and the -r flag to remove screenshots after the movie has been created (no files will be deleted if movie creation fails).
 * `screenlog-process-movie-backlog.sh`: Creates movies in all directories that lack a movie (using `create-screenlog-movie.sh`).
 
+All screenlog source code is licensed under the Apache License 2.0.
+
 # Requirements
 * ImageMagick (for convert)
 * ghostscript (dependency for convert using fonts)
