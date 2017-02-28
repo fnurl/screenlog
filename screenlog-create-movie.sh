@@ -28,7 +28,7 @@ function usage() {
 function log() {
     message="`date +%Y-%m-%d\ %H:%M:%S`: $1"
     echo $message
-    echo $message >> ~/Library/Logs/se.fnurl.screenlog.createMovie.log
+    echo $message >> ~/logs/se.fnurl.screenlog.createMovie.log
 }
 
 # default values
@@ -71,7 +71,7 @@ echo LOGPATH: $logpath
 # check for ffmpeg
 if hash ffmpeg 2>/dev/null; then
     log "ffmpeg found, creating movie..."
-    ffmpeg -r 15 -pattern_type glob -i "$logpath/*.jpg" -vcodec libx264 $logpath/$date.mp4
+    ffmpeg -r 15 -pattern_type glob -i "$logpath/*.jpg" -vcodec libx264 $logpath/$date.mp4 2>> $HOME/logs/screenlog-create-movie.log
     
     # if movie created
     if [ $? -eq 0 ]; then
