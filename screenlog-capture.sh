@@ -12,6 +12,10 @@
 EXPECTED_ARGS=1
 E_BADARGS=65
 
+if [ -f "${HOME}/noscreenlog" ]; then
+  exit
+fi
+
 if [ $# -ne $EXPECTED_ARGS ]; then
     echo -e "Usage: `basename $0` <path to screenlog dir>\nSaves screenshot to <path to screenlog dir>/YY-MM-DD"
     exit $E_BADARGS

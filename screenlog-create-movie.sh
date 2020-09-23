@@ -12,10 +12,21 @@
 # Use the -r flag to remove the jpegs after creating the movie.
 #
 # Author: Jody Foo <jody.foo@gmail.com>
-# Date: 2014-07-11
+# Date: 2014-07-11, 2018-03-13
 
 # EDIT THIS LINE SO IT POINTS TO ffmpeg ON YOUR SYSTEM
 PATH=${PATH}:/usr/local/bin
+
+# debug=3, info=2, errors=1, silent=0
+LOGLEVEL=2
+
+logdir=${HOME}/Library/Logs/se.fnurl
+mkdir -p ${logdir}
+
+logfile="${logdir}/screenlog.createmovie.log"
+touch ${logfile}
+
+ffmpeglogfile="${logdir}/screenlog.ffmpeg.log"
 
 function usage() {
     echo "Usage: `basename $0` [-d YYYY-MM-DD] [-r] <path to screenlog dir>"
@@ -25,10 +36,30 @@ function usage() {
     echo "    -r deletes the jpgs after the movie has been created"
 }
 
-function log() {
-    message="`date +%Y-%m-%d\ %H:%M:%S`: $1"
-    echo $message
-    echo $message >> ~/logs/se.fnurl.screenlog.createMovie.log
+# https://stackoverflow.com/questions/2342826/how-to-pipe-stderr-and-not-stdout
+# use syslog util for log messages, print to stderr and save to file
+
+# error message level=1
+function errmsg() {
+  if [[ $LOGLEVEL -ge 1 ]]; then
+    #echo "$(date +%Y-%m-%d\ %H:%M:%S): $1" | tee -a ${logfile}
+    logger -s -t screenlog -p local3.err $1 2>&1 | tee -a ${logfile}
+  fi
+}
+
+# infomessage level=2
+function infomsg() {
+  if [[ $LOGLEVEL -ge 2 ]];then 
+    #echo "$(date +%Y-%m-%d\ %H:%M:%S): $1" | tee -a ${logfile}
+    logger -s -t screenlog -p local3.info $1 2>&1 | tee -a ${logfile}
+  fi
+}
+
+# debug message level=3 (not saved to log file)
+function debugmsg() {
+  if [[ $LOGLEVEL -ge 3 ]]; then
+    logger -s -t screenlog -p local3.debug $1
+  fi
 }
 
 # default values
@@ -60,32 +91,37 @@ then
   exit $E_BADARGS
 fi
 
-echo "Processing screenlog for" $date"..."
+infomsg "Processing screenlog for ${date}..."
 #echo ARGS: $1
 
-# Remove trailing / from path if it exists and append date to logpath
-logpath=${1%/}/$date
-mkdir -p $logpath
-echo LOGPATH: $logpath
+# Remove trailing / from path if it exists and append date to screenlogpath
+screenlogpath="${1%/}/${date}"
+mkdir -p ${screenlogpath}
+infomsg "screenlogpath: ${screenlogpath}"
 
 # check for ffmpeg
 if hash ffmpeg 2>/dev/null; then
-    log "ffmpeg found, creating movie..."
-    ffmpeg -r 15 -pattern_type glob -i "$logpath/*.jpg" -vcodec libx264 $logpath/$date.mp4 2>> $HOME/logs/screenlog-create-movie.log
+    #infomsg "ffmpeg found, creating movie..."
+    ffmpeg -r 15 \
+           -pattern_type glob \
+           -i "$screenlogpath/*.jpg" \
+           -vcodec libx264 $screenlogpath/$date.mp4 \
+           2>> ${ffmpeglogfile}
     
-    # if movie created
+    # if movie created (return code 0
     if [ $? -eq 0 ]; then
-        log "screenlog movie $logpath/$date.mp4 created."
+        infomsg "screenlog movie $screenlogpath/$date.mp4 created."
         if [ -n "$remove" ]; then
-            echo "Deleting source jpgs ($logpath/*.jpg)..."
-            rm $logpath/*.jpg
+            infomsg "Deleting source jpgs (${screenlogpath}/*.jpg)..."
+            rm $screenlogpath/*.jpg
         else
-            echo "Keeping source jpgs..."
+            infomsg "Keeping source jpgs..."
         fi
     else
-        log "ERROR: Failed to create movie. Not deleting any source jpgs."
+        errmsg "ERROR: Failed to create movie for ${date}. Not deleting any source jpgs."
+        exit $?
     fi
 else
-    log "ERROR: ffmpeg not found"
+    errmsg "ERROR: ffmpeg not found"
     exit 1
 fi
